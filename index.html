@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Testar express API</h1>
+    <script>
+        getData();
+        async function getData() {
+            const response = await fetch('http://127.0.0.1:3000/api/users');
+            const data = await response.json();
+            console.log(data);
+        }
+    </script>
+</body>
+</html>
