@@ -5,7 +5,7 @@ Detta repository innehåller ett REST API byggt med Node.js, Express och Postgre
 
 ## Länk
 
-En liveversion av API:et finns tillgänglig här: 
+En liveversion av API:et finns tillgänglig här: https://moment-2-frontend.onrender.com
 
 
 ## Installation & databas
