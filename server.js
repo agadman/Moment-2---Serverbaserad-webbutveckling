@@ -67,9 +67,30 @@ app.get('/api/workexperience', async (req, res) => {
 app.post('/api/workexperience', async (req, res) => {
     const { companyname, jobtitle, location, startdate, enddate, description } = req.body;
 
-    if (!companyname || !jobtitle || !location || !startdate || !enddate || !description) {
+    const errors = [];
+
+    if (!companyname) {
+        errors.push("Företagsnamn är obligatoriskt.");
+    }
+    if (!jobtitle) {
+        errors.push("Jobbtitel är obligatoriskt.");
+    }
+    if (!location) {
+        errors.push("Plats är obligatoriskt.");
+    }
+    if (!startdate) {
+        errors.push("Startdatum är obligatoriskt.");
+    }
+    if (!enddate) {
+        errors.push("Slutdatum är obligatoriskt.");
+    }
+    if (!description) {
+        errors.push("Beskrivning är obligatoriskt.");
+    }
+
+    if (errors.length > 0) {
         return res.status(400).json({
-            error: 'Fyll i alla fält'
+            errors
         });
     }
 
@@ -81,7 +102,10 @@ app.post('/api/workexperience', async (req, res) => {
             [companyname, jobtitle, location, startdate, enddate, description]
         );
 
-        res.status(201).json({ message: 'Work experience tillagd', newExperience: result.rows[0] });
+        res.status(201).json({
+            message: 'Arbetserfarenhet tillagd',
+            newExperience: result.rows[0]
+        });
 
     } catch (err) {
         console.error('Fel vid insert:', err);
