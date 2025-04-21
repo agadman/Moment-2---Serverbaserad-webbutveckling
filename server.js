@@ -1,13 +1,13 @@
-const { Client } = require("pg");
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+const { Client } = require("pg"); // importerar PostgreSQL
+const express = require('express'); // Express för att skapa API:t
+const cors = require('cors'); // CORS för att tillåta anrop från andra domäner
+require('dotenv').config(); // Så jag kan använda .env
 
-const app = express();
+const app = express(); // Skapar en instans av Express
 const port = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+app.use(cors()); // Tillåter cross-origin-requests i webbtjänsten
+app.use(express.json()); // Tolkar JSON-data
 
 // Ansluter till databasen (PostgreSQL)
 const client = new Client({
@@ -21,6 +21,7 @@ const client = new Client({
     },
 });
 
+// Försöker ansluta till databasen
 client.connect((err) => {
     if (err) {
         console.log("Fel vid anslutning: " + err);
@@ -30,7 +31,7 @@ client.connect((err) => {
     }
 });
 
-// Skapar tabellen om den inte finns
+// Skapar tabellen i databasen (om den redan existerar)
 function createTable() {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS workexperience (
@@ -50,10 +51,13 @@ function createTable() {
 }
 
 // Routes
+
+// Användes som grund för att testa api:et
 app.get('/api', (req, res) => {
     res.json({ message: 'Welcome to the Work Experience API' });
 });
 
+// Hämtar alla arbetserfarenheter från databasen
 app.get('/api/workexperience', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM workexperience ORDER BY id DESC');
@@ -64,30 +68,20 @@ app.get('/api/workexperience', async (req, res) => {
     }
 });
 
+// Lägger till en ny arbetserfarenhet som sparas till databasen
 app.post('/api/workexperience', async (req, res) => {
     const { companyname, jobtitle, location, startdate, enddate, description } = req.body;
 
+    // Validering av inputs
     const errors = [];
+    if (!companyname) {errors.push("Företagsnamn är obligatoriskt.");}
+    if (!jobtitle) {errors.push("Jobbtitel är obligatoriskt.");}
+    if (!location) {errors.push("Plats är obligatoriskt.");}
+    if (!startdate) {errors.push("Startdatum är obligatoriskt.");}
+    if (!enddate) {errors.push("Slutdatum är obligatoriskt.");}
+    if (!description) {errors.push("Beskrivning är obligatoriskt.");}
 
-    if (!companyname) {
-        errors.push("Företagsnamn är obligatoriskt.");
-    }
-    if (!jobtitle) {
-        errors.push("Jobbtitel är obligatoriskt.");
-    }
-    if (!location) {
-        errors.push("Plats är obligatoriskt.");
-    }
-    if (!startdate) {
-        errors.push("Startdatum är obligatoriskt.");
-    }
-    if (!enddate) {
-        errors.push("Slutdatum är obligatoriskt.");
-    }
-    if (!description) {
-        errors.push("Beskrivning är obligatoriskt.");
-    }
-
+    // Skickar fel om något saknas i fält
     if (errors.length > 0) {
         return res.status(400).json({
             errors
@@ -95,6 +89,7 @@ app.post('/api/workexperience', async (req, res) => {
     }
 
     try {
+        // Infogar ny rad i databasen
         const result = await client.query(
             `INSERT INTO workexperience (companyname, jobtitle, location, startdate, enddate, description)
              VALUES ($1, $2, $3, $4, $5, $6)
@@ -102,6 +97,7 @@ app.post('/api/workexperience', async (req, res) => {
             [companyname, jobtitle, location, startdate, enddate, description]
         );
 
+        // Skickar tillbaka det som sparats
         res.status(201).json({
             message: 'Arbetserfarenhet tillagd',
             newExperience: result.rows[0]
@@ -113,11 +109,13 @@ app.post('/api/workexperience', async (req, res) => {
     }
 });
 
+// Uppdatera en specifik arbetserfarenhet
 app.put('/api/workexperience/:id', async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id); // Hämtar id från URL
     const { companyname, jobtitle, location, startdate, enddate, description } = req.body;
 
     try {
+        // Uppdaterar posten i databasen
         const result = await client.query(
             `UPDATE workexperience
              SET companyname=$1, jobtitle=$2, location=$3, startdate=$4, enddate=$5, description=$6
@@ -128,7 +126,7 @@ app.put('/api/workexperience/:id', async (req, res) => {
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Erfarenheten hittades inte' });
         }
-
+        // Skickar tillbaka det uppdaterade objektet
         res.json({ message: 'Work experience uppdaterad', updatedExperience: result.rows[0] });
     } catch (err) {
         console.error(err);
@@ -136,10 +134,12 @@ app.put('/api/workexperience/:id', async (req, res) => {
     }
 });
 
+// Ta bort en arbetserfarenhet från databasen
 app.delete('/api/workexperience/:id', async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id); // Hämtar id från URL
 
     try {
+        // Tar bort raden från databasen
         const result = await client.query('DELETE FROM workexperience WHERE id=$1 RETURNING *', [id]);
 
         if (result.rowCount === 0) {
